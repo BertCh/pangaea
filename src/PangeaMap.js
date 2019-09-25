@@ -2,6 +2,7 @@ import React, { useState, useEffect, Fragment } from "react";
 import { csvParse } from "d3-dsv";
 import { contours } from "d3-contour";
 import { geoEquirectangular, geoPath, geoIdentity } from "d3-geo";
+import { polygon } from "@turf/helpers";
 import AnimatedSvgPath from "./AnimatedSvgPath";
 
 const PangeaMap = props => {
@@ -89,6 +90,13 @@ const PangeaMap = props => {
   const pathGenerator = geoPath(
     geoIdentity().fitSize([height, width], contoursData.newContours[1])
   );
+
+  const minLength =
+    contoursData.oldContours[1].coordinates.length <
+    contoursData.newContours[1].coordinates.length
+      ? contoursData.oldContours[1].coordinates
+      : contoursData.newContours[1].coordinates;
+  console.log(minLength);
   return (
     <Fragment>
       <input
@@ -100,18 +108,26 @@ const PangeaMap = props => {
         onChange={e => select(e.target.value)}
       />
       <svg height="100%" width="100%">
-        <AnimatedSvgPath
-          oldData={[
-            {
-              d: contoursData.oldContours
-                ? pathGenerator(contoursData.oldContours[1])
-                : null
-            }
-          ]}
-          data={[{ d: pathGenerator(contoursData.newContours[1]) }]}
-          fill="none"
-          stroke="black"
-        />
+        {minLength.map((datum, i) => {
+          return (
+            <AnimatedSvgPath
+              oldData={
+                pathGenerator(
+                  polygon(contoursData.oldContours[1].coordinates[i])
+                )
+                // contoursData.oldContours
+                //   ? contoursData.oldContours[0].coordinates[0][0]
+                //   : contoursData.newContours[0].coordinates[0][0]
+              }
+              data={pathGenerator(
+                polygon(contoursData.newContours[1].coordinates[i])
+              )}
+              pathGenerator={pathGenerator}
+              fill="none"
+              stroke="black"
+            />
+          );
+        })}
       </svg>
     </Fragment>
   );

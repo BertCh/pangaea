@@ -1,25 +1,22 @@
 import React, { Fragment } from "react";
-import { useSpring, animated } from "react-spring";
-
-import { interpolate } from "flubber";
+import { animated, useSpring } from "react-spring";
+import * as flubber from "flubber";
 
 const AnimatedSvgPath = props => {
   const { data, oldData } = props;
-  const end = data[0].d;
-  let start = oldData[0].d;
-  if (!start) {
-    start = end;
-  }
-  const progress = useSpring({ from: { t: 0 }, to: { t: 1 } });
-  console.log(start.slice(0, 20), end.slice(0, 20));
-  const interpolator = interpolate(start, end, {
-    maxSegmentLength: 0.1
-  });
+  console.log(props);
+  // const minLength = oldData.length < data.length ? oldData.length : data.length;
+  // const slicedOldData = oldData.slice(0, minLength);
+  // const slicedData = data.slice(0, minLength);
+  const progress = useSpring({ from: { t: 0 }, to: { t: 1 } }, { reset: true });
+  const interpolater = time => {
+    return flubber.interpolate(oldData, data)(time);
+  };
 
   return (
     <Fragment>
       <animated.path
-        d={progress.t.interpolate(interpolator)}
+        d={progress.t.interpolate(interpolater)}
         fill="none"
         stroke="black"
       />
