@@ -8,7 +8,7 @@ const AnimatedSvgPath = props => {
   // const minLength = oldData.length < data.length ? oldData.length : data.length;
   // const slicedOldData = oldData.slice(0, minLength);
   // const slicedData = data.slice(0, minLength);
-  const progress = useSpring({ from: { t: 0 }, to: { t: 1 } }, { reset: true });
+  const progress = useSpring({ from: { t: 0 }, to: { t: 1 } });
   const interpolater = time => {
     return flubber.interpolate(oldData, data)(time);
   };
