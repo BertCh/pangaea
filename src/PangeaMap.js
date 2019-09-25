@@ -1,16 +1,56 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { csvParse } from "d3-dsv";
 import { contours } from "d3-contour";
+import { geoEquirectangular, geoPath, geoIdentity } from "d3-geo";
+import AnimatedSvgPath from "./AnimatedSvgPath";
 
 const PangeaMap = props => {
   const { fileNames, archive } = props;
   const thresholds = [-Infinity, 1];
-  console.log(props);
-  const [selection, select] = useState({ selection: 0 });
+  const [viewport, updateViewport] = useState({
+    width: 1300,
+    height: 1000,
+    latitude: 37.77,
+    longitude: -122.41,
+    zoom: 8
+  });
+  const [selection, select] = useState(1);
   const [dem, setDEM] = useState({ data: null });
   useEffect(() => {
     const asyncProcessing = async () => {
-      const map = await archive.file(fileNames[0].value).async("text");
+      let oldDem, oldContours;
+      if (selection > 0) {
+        const map = await archive
+          .file(fileNames[selection - 1].value)
+          .async("text");
+        const parsedData = csvParse(map.replace(/\r/g, "\n"))
+          // Standardize field names
+          .map(p => {
+            let lon = p["# lon"] !== undefined ? p["# lon"] : p.longitude;
+            let lat = p.lat !== undefined ? p.lat : p.latitude;
+            let elev = p.elev !== undefined ? p.elev : p.elevation;
+            return { lon, lat, elev };
+          });
+        const vals = parsedData
+          .filter(d => d.lon < 180 && d.lat > -90)
+          .map(d => d.elev);
+
+        const dem = Object({
+          width: 360,
+          height: 180,
+          data: vals
+        });
+        const contoursData = contours()
+          .thresholds([thresholds[0], thresholds[1]])
+          .size([dem.width, dem.height])(dem.data);
+        oldDem = dem;
+        oldContours = contoursData;
+      } else {
+        oldDem = null;
+        oldContours = null;
+      }
+
+      const map = await archive.file(fileNames[selection].value).async("text");
       const parsedData = csvParse(map.replace(/\r/g, "\n"))
         // Standardize field names
         .map(p => {
@@ -28,19 +68,53 @@ const PangeaMap = props => {
         height: 180,
         data: vals
       });
-      console.log(dem);
       const contoursData = contours()
         .thresholds(thresholds)
         .size([dem.width, dem.height])(dem.data);
-      setDEM({ data: dem, contours: contoursData });
+      setDEM({
+        demData: { dem: dem, oldDem: oldDem },
+        contoursData: { newContours: contoursData, oldContours: oldContours }
+      });
     };
     if (fileNames) {
       asyncProcessing();
     }
-  }, [fileNames, selection, archive]);
-  if (!dem.data) return <div>processing Digital elevation model</div>;
-  console.log(dem);
-  return <div>PangeaMaps</div>;
+  }, [fileNames, selection, archive, thresholds[0], thresholds[1]]);
+  if (!dem.demData) return <div>processing Digital elevation model</div>;
+
+  const { demData, contoursData } = dem;
+
+  const height = 960;
+  const width = 500;
+  const pathGenerator = geoPath(
+    geoIdentity().fitSize([height, width], contoursData.newContours[1])
+  );
+  return (
+    <Fragment>
+      <input
+        type="range"
+        min={0}
+        max={fileNames.length}
+        value={selection}
+        className="slider"
+        onChange={e => select(e.target.value)}
+      />
+      <svg height="100%" width="100%">
+        <AnimatedSvgPath
+          oldData={[
+            {
+              d: contoursData.oldContours
+                ? pathGenerator(contoursData.oldContours[1])
+                : null
+            }
+          ]}
+          data={[{ d: pathGenerator(contoursData.newContours[1]) }]}
+          fill="none"
+          stroke="black"
+        />
+      </svg>
+    </Fragment>
+  );
 };
 
 export default PangeaMap;

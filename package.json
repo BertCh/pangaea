@@ -5,12 +5,13 @@
   "dependencies": {
     "d3-contour": "^1.3.2",
     "d3-dsv": "^1.1.1",
-    "deck.gl": "^7.3.0-beta.5",
+    "d3-geo": "^1.11.6",
+    "flubber": "^0.4.2",
     "jszip": "^3.2.2",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
-    "react-map-gl": "^5.0.11",
-    "react-scripts": "3.1.2"
+    "react-scripts": "3.1.2",
+    "react-spring": "^8.0.27"
   },
   "scripts": {
     "start": "react-scripts start",

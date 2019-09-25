@@ -44,7 +44,7 @@ function App() {
   console.log(state);
   return (
     <div className="App">
-      <PangeaMap fileNames={fileNames} archive={archive} />
+      <PangeaMap fileNames={fileNames.reverse()} archive={archive} />
     </div>
   );
 }
