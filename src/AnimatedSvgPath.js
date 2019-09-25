@@ -1,25 +1,30 @@
 import React, { Fragment } from "react";
-import { animated, useSpring } from "react-spring";
+import { animated, useSpring, useTransition } from "react-spring";
 import * as flubber from "flubber";
 
 const AnimatedSvgPath = props => {
   const { data, oldData } = props;
-  console.log(props);
-  // const minLength = oldData.length < data.length ? oldData.length : data.length;
-  // const slicedOldData = oldData.slice(0, minLength);
-  // const slicedData = data.slice(0, minLength);
-  const progress = useSpring({ from: { t: 0 }, to: { t: 1 } });
-  const interpolater = time => {
-    return flubber.interpolate(oldData, data)(time);
-  };
+  const transitions = useTransition(
+    oldData,
+    (d, i) => `id-${i}`,
+    { from: { t: 0 }, initial: { t: 0 }, update: { t: 1 } },
+    { reset: true, unique: true }
+  );
 
   return (
     <Fragment>
-      <animated.path
-        d={progress.t.interpolate(interpolater)}
-        fill="none"
-        stroke="black"
-      />
+      {transitions.map(({ item, key, props }, i) => {
+        if (!oldData[i] || !data[i]) return <path></path>;
+        return (
+          <animated.path
+            native="true"
+            key={key}
+            d={props.t.interpolate(flubber.interpolate(oldData[i], data[i]))}
+            fill="none"
+            stroke="black"
+          />
+        );
+      })}
     </Fragment>
   );
 };

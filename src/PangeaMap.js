@@ -3,6 +3,7 @@ import { csvParse } from "d3-dsv";
 import { contours } from "d3-contour";
 import { geoEquirectangular, geoPath, geoIdentity } from "d3-geo";
 import { polygon } from "@turf/helpers";
+import area from "@turf/area";
 import AnimatedSvgPath from "./AnimatedSvgPath";
 
 const PangeaMap = props => {
@@ -90,13 +91,18 @@ const PangeaMap = props => {
   const pathGenerator = geoPath(
     geoIdentity().fitSize([height, width], contoursData.newContours[1])
   );
-
   const minLength =
     contoursData.oldContours[1].coordinates.length <
     contoursData.newContours[1].coordinates.length
       ? contoursData.oldContours[1].coordinates
       : contoursData.newContours[1].coordinates;
-  console.log(minLength);
+  const sortedOld = contoursData.oldContours[1].coordinates.sort((d1, d2) => {
+    return area(polygon(d2)) - area(polygon(d1));
+  });
+  const sortedNew = contoursData.newContours[1].coordinates.sort((d1, d2) => {
+    return area(polygon(d2)) - area(polygon(d1));
+  });
+
   return (
     <Fragment>
       <input
@@ -108,26 +114,15 @@ const PangeaMap = props => {
         onChange={e => select(e.target.value)}
       />
       <svg height="100%" width="100%">
-        {minLength.map((datum, i) => {
-          return (
-            <AnimatedSvgPath
-              oldData={
-                pathGenerator(
-                  polygon(contoursData.oldContours[1].coordinates[i])
-                )
-                // contoursData.oldContours
-                //   ? contoursData.oldContours[0].coordinates[0][0]
-                //   : contoursData.newContours[0].coordinates[0][0]
-              }
-              data={pathGenerator(
-                polygon(contoursData.newContours[1].coordinates[i])
-              )}
-              pathGenerator={pathGenerator}
-              fill="none"
-              stroke="black"
-            />
-          );
-        })}
+        <AnimatedSvgPath
+          oldData={minLength.map((d, i) =>
+            pathGenerator(polygon(sortedOld[i]))
+          )}
+          data={minLength.map((d, i) => pathGenerator(polygon(sortedNew[i])))}
+          pathGenerator={pathGenerator}
+          fill="none"
+          stroke="black"
+        />
       </svg>
     </Fragment>
   );
