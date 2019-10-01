@@ -4,22 +4,24 @@ import * as flubber from "flubber";
 
 const AnimatedSvgPath = props => {
   const { data, oldData } = props;
-  const transitions = useTransition(
-    oldData,
-    (d, i) => `id-${i}`,
-    { from: { t: 0 }, initial: { t: 0 }, update: { t: 1 } },
-    { reset: true, unique: true }
-  );
+  const transitions = useSpring({
+    from: { t: 0 },
+    to: { t: 1 },
+    reset: true,
+    unique: true
+  });
 
   return (
     <Fragment>
-      {transitions.map(({ item, key, props }, i) => {
+      {data.map((datum, i) => {
         if (!oldData[i] || !data[i]) return <path></path>;
         return (
           <animated.path
             native="true"
-            key={key}
-            d={props.t.interpolate(flubber.interpolate(oldData[i], data[i]))}
+            key={`flubber-${i}`}
+            d={transitions.t.interpolate(
+              flubber.interpolate(oldData[i], data[i])
+            )}
             fill="none"
             stroke="black"
           />
